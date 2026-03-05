@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import sqlite3
 
@@ -10,11 +10,173 @@ from .db import Database
 from .errors import LibraryError
 
 try:
-    from PyQt6 import QtCore, QtGui, QtWidgets
+    if TYPE_CHECKING:
+        QtCore = cast(Any, object())
+        QtGui = cast(Any, object())
+        QtWidgets = cast(Any, object())
+    else:
+        from PyQt6 import QtCore as QtCore
+        from PyQt6 import QtGui as QtGui
+        from PyQt6 import QtWidgets as QtWidgets
 except ModuleNotFoundError as e:
     raise ModuleNotFoundError(
         "PyQt6 is not installed. Install dependencies: pip install -r requirements.txt"
     ) from e
+
+
+def apply_theme(app) -> None:
+    app.setStyle("Fusion")
+
+    font = QtGui.QFont("Segoe UI", 10)
+    font.setStyleHint(QtGui.QFont.StyleHint.SansSerif)
+    app.setFont(font)
+
+    pal = QtGui.QPalette()
+    pal.setColor(QtGui.QPalette.ColorRole.Window, QtGui.QColor("#f6f7fb"))
+    pal.setColor(QtGui.QPalette.ColorRole.Base, QtGui.QColor("#ffffff"))
+    pal.setColor(QtGui.QPalette.ColorRole.AlternateBase, QtGui.QColor("#f3f6fb"))
+    pal.setColor(QtGui.QPalette.ColorRole.Text, QtGui.QColor("#0f172a"))
+    pal.setColor(QtGui.QPalette.ColorRole.WindowText, QtGui.QColor("#0f172a"))
+    pal.setColor(QtGui.QPalette.ColorRole.Button, QtGui.QColor("#ffffff"))
+    pal.setColor(QtGui.QPalette.ColorRole.ButtonText, QtGui.QColor("#0f172a"))
+    pal.setColor(QtGui.QPalette.ColorRole.Highlight, QtGui.QColor("#dbeafe"))
+    pal.setColor(QtGui.QPalette.ColorRole.HighlightedText, QtGui.QColor("#0f172a"))
+    app.setPalette(pal)
+
+    app.setStyleSheet(
+        """
+        QWidget {
+            color: #0f172a;
+        }
+
+        QLabel[role='muted'] {
+            color: #425466;
+        }
+
+        QWidget#HeaderBar {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                stop:0 #ffffff,
+                stop:1 #eef2ff);
+            border: 1px solid #d7dde7;
+            border-radius: 16px;
+        }
+
+        QLabel#AppTitle {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        QLineEdit, QComboBox {
+            background: #ffffff;
+            border: 1px solid #d7dde7;
+            border-radius: 10px;
+            padding: 7px 10px;
+        }
+
+        QLineEdit:focus, QComboBox:focus {
+            border-color: #2563eb;
+        }
+
+        QPushButton {
+            background: #ffffff;
+            border: 1px solid #d7dde7;
+            border-radius: 10px;
+            padding: 7px 12px;
+        }
+
+        QPushButton:hover {
+            background: #f3f6fb;
+            border-color: #c7d0df;
+        }
+
+        QPushButton:pressed {
+            background: #e9eef7;
+        }
+
+        QPushButton[variant='primary'] {
+            background: #2563eb;
+            color: #ffffff;
+            border: 1px solid #1d4ed8;
+        }
+
+        QPushButton[variant='primary']:hover {
+            background: #1d4ed8;
+        }
+
+        QPushButton[variant='danger'] {
+            background: #ef4444;
+            color: #ffffff;
+            border: 1px solid #dc2626;
+        }
+
+        QPushButton[variant='danger']:hover {
+            background: #dc2626;
+        }
+
+        QTabWidget::pane {
+            border: 0px;
+        }
+
+        QTabBar::tab {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 10px 14px;
+            margin-right: 6px;
+            border-radius: 10px;
+        }
+
+        QTabBar::tab:selected {
+            background: #ffffff;
+            border-color: #d7dde7;
+        }
+
+        QTableWidget {
+            background: #ffffff;
+            border: 1px solid #d7dde7;
+            border-radius: 12px;
+            gridline-color: #e6ebf2;
+            selection-background-color: #dbeafe;
+            selection-color: #0f172a;
+        }
+
+        QHeaderView::section {
+            background: #f3f6fb;
+            border: 0px;
+            border-bottom: 1px solid #e6ebf2;
+            padding: 8px 10px;
+            font-weight: 600;
+        }
+
+        QTableWidget::item {
+            padding: 6px;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        QStatusBar {
+            color: #425466;
+        }
+        """
+    )
+
+
+def _style_table(table) -> None:
+    table.setAlternatingRowColors(True)
+    table.setShowGrid(False)
+    table.verticalHeader().setVisible(False)
+    table.setWordWrap(False)
+    table.setCornerButtonEnabled(False)
+    table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+    table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+    header = table.horizontalHeader()
+    header.setHighlightSections(False)
+    header.setDefaultAlignment(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter)
+
+
+def _set_btn_variant(btn, variant: str) -> None:
+    btn.setProperty("variant", variant)
+    btn.style().unpolish(btn)
+    btn.style().polish(btn)
 
 
 @dataclass(frozen=True)
@@ -34,6 +196,7 @@ class BookDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
+        self.setMinimumWidth(420)
 
         self._title = QtWidgets.QLineEdit(self)
         self._author = QtWidgets.QLineEdit(self)
@@ -73,6 +236,7 @@ class UserDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
+        self.setMinimumWidth(420)
 
         self._name = QtWidgets.QLineEdit(self)
         if data is not None:
@@ -103,6 +267,7 @@ class BooksTab(QtWidgets.QWidget):
 
         self.search = QtWidgets.QLineEdit(self)
         self.search.setPlaceholderText("Search by title / author / ISBN")
+        self.search.setClearButtonEnabled(True)
         self.search.returnPressed.connect(self.refresh)
 
         self.btn_refresh = QtWidgets.QPushButton("Refresh", self)
@@ -111,6 +276,9 @@ class BooksTab(QtWidgets.QWidget):
         self.btn_delete = QtWidgets.QPushButton("Delete", self)
         self.btn_export = QtWidgets.QPushButton("Export CSV", self)
         self.btn_import = QtWidgets.QPushButton("Import CSV", self)
+
+        _set_btn_variant(self.btn_add, "primary")
+        _set_btn_variant(self.btn_delete, "danger")
 
         self.btn_refresh.clicked.connect(self.refresh)
         self.btn_add.clicked.connect(self.add_book)
@@ -122,10 +290,14 @@ class BooksTab(QtWidgets.QWidget):
         self.table = QtWidgets.QTableWidget(self)
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(["Title", "Author", "ISBN", "Status", "Borrower", "Due"])
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setStretchLastSection(True)
+
+        _style_table(self.table)
+
+        self.footer = QtWidgets.QLabel(self)
+        self.footer.setProperty("role", "muted")
 
         top = QtWidgets.QHBoxLayout()
         top.addWidget(self.search, 1)
@@ -140,8 +312,11 @@ class BooksTab(QtWidgets.QWidget):
             top.addWidget(b)
 
         layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
         layout.addLayout(top)
         layout.addWidget(self.table)
+        layout.addWidget(self.footer)
 
         self.refresh()
 
@@ -178,6 +353,7 @@ class BooksTab(QtWidgets.QWidget):
                 self.table.setItem(r, c, it)
         self.table.resizeColumnsToContents()
         self.table.setSortingEnabled(True)
+        self.footer.setText(f"{len(data)} books")
 
     def add_book(self) -> None:
         dlg = BookDialog(parent=self, title="Add Book")
@@ -259,6 +435,7 @@ class UsersTab(QtWidgets.QWidget):
 
         self.search = QtWidgets.QLineEdit(self)
         self.search.setPlaceholderText("Search user")
+        self.search.setClearButtonEnabled(True)
         self.search.returnPressed.connect(self.refresh)
 
         self.btn_refresh = QtWidgets.QPushButton("Refresh", self)
@@ -267,6 +444,9 @@ class UsersTab(QtWidgets.QWidget):
         self.btn_delete = QtWidgets.QPushButton("Delete", self)
         self.btn_export = QtWidgets.QPushButton("Export CSV", self)
         self.btn_import = QtWidgets.QPushButton("Import CSV", self)
+
+        _set_btn_variant(self.btn_add, "primary")
+        _set_btn_variant(self.btn_delete, "danger")
 
         self.btn_refresh.clicked.connect(self.refresh)
         self.btn_add.clicked.connect(self.add_user)
@@ -278,10 +458,14 @@ class UsersTab(QtWidgets.QWidget):
         self.table = QtWidgets.QTableWidget(self)
         self.table.setColumnCount(1)
         self.table.setHorizontalHeaderLabels(["Name"])
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setStretchLastSection(True)
+
+        _style_table(self.table)
+
+        self.footer = QtWidgets.QLabel(self)
+        self.footer.setProperty("role", "muted")
 
         top = QtWidgets.QHBoxLayout()
         top.addWidget(self.search, 1)
@@ -296,8 +480,11 @@ class UsersTab(QtWidgets.QWidget):
             top.addWidget(b)
 
         layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
         layout.addLayout(top)
         layout.addWidget(self.table)
+        layout.addWidget(self.footer)
 
         self.refresh()
 
@@ -323,6 +510,7 @@ class UsersTab(QtWidgets.QWidget):
             self.table.setItem(r, 0, it)
         self.table.resizeColumnsToContents()
         self.table.setSortingEnabled(True)
+        self.footer.setText(f"{len(users)} users")
 
     def add_user(self) -> None:
         dlg = UserDialog(parent=self, title="Add User")
@@ -407,6 +595,8 @@ class LoansTab(QtWidgets.QWidget):
         self.btn_return = QtWidgets.QPushButton("Return selected", self)
         self.btn_refresh = QtWidgets.QPushButton("Refresh", self)
 
+        _set_btn_variant(self.btn_checkout, "primary")
+
         self.btn_checkout.clicked.connect(self.checkout)
         self.btn_return.clicked.connect(self.return_selected)
         self.btn_refresh.clicked.connect(self.refresh)
@@ -423,10 +613,14 @@ class LoansTab(QtWidgets.QWidget):
             "Due",
             "Returned",
         ])
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setStretchLastSection(True)
+
+        _style_table(self.table)
+
+        self.footer = QtWidgets.QLabel(self)
+        self.footer.setProperty("role", "muted")
 
         top = QtWidgets.QHBoxLayout()
         top.addWidget(QtWidgets.QLabel("User:"), 0)
@@ -443,9 +637,12 @@ class LoansTab(QtWidgets.QWidget):
         filter_row.addWidget(self.open_only, 0)
 
         layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
         layout.addLayout(top)
         layout.addLayout(filter_row)
         layout.addWidget(self.table)
+        layout.addWidget(self.footer)
 
         self.refresh()
 
@@ -507,6 +704,9 @@ class LoansTab(QtWidgets.QWidget):
                 self.table.setItem(r, c, it)
         self.table.resizeColumnsToContents()
         self.table.setSortingEnabled(True)
+        open_label = "open" if open_only else "all"
+        who = "all users" if user_id is None else str(self.user_filter.currentText())
+        self.footer.setText(f"{len(loans)} loans ({open_label}, {who})")
 
     def checkout(self) -> None:
         user_id = self.user_combo.currentData()
@@ -544,14 +744,40 @@ class ToolsTab(QtWidgets.QWidget):
         self.btn_backup = QtWidgets.QPushButton("Backup DB", self)
         self.btn_restore = QtWidgets.QPushButton("Restore DB", self)
 
+        _set_btn_variant(self.btn_backup, "primary")
+        _set_btn_variant(self.btn_restore, "danger")
+
         self.btn_backup.clicked.connect(self.backup)
         self.btn_restore.clicked.connect(self.restore)
 
         layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
         layout.addWidget(self.info)
         layout.addWidget(self.btn_backup)
         layout.addWidget(self.btn_restore)
         layout.addStretch(1)
+
+
+class HeaderBar(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("HeaderBar")
+
+        title = QtWidgets.QLabel("Library Management", self)
+        title.setObjectName("AppTitle")
+
+        subtitle = QtWidgets.QLabel("Books, users, loans, and database tools", self)
+        subtitle.setProperty("role", "muted")
+
+        text_col = QtWidgets.QVBoxLayout()
+        text_col.setSpacing(2)
+        text_col.addWidget(title)
+        text_col.addWidget(subtitle)
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.addLayout(text_col, 1)
 
     def _refresh_info(self) -> None:
         self.info.setText(f"Database: {self.db.db_path}")
@@ -593,7 +819,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("Library Management System")
         self.resize(1100, 650)
 
-        tabs = QtWidgets.QTabWidget(self)
+        self.statusBar().showMessage("Ready")
+
+        wrapper = QtWidgets.QWidget(self)
+        outer = QtWidgets.QVBoxLayout(wrapper)
+        outer.setContentsMargins(16, 16, 16, 16)
+        outer.setSpacing(12)
+
+        outer.addWidget(HeaderBar(parent=wrapper))
+
+        tabs = QtWidgets.QTabWidget(wrapper)
         self.books_tab = BooksTab(db, parent=tabs)
         self.users_tab = UsersTab(db, parent=tabs)
         self.loans_tab = LoansTab(db, parent=tabs)
@@ -605,7 +840,8 @@ class MainWindow(QtWidgets.QMainWindow):
         tabs.addTab(self.tools_tab, "Tools")
 
         tabs.currentChanged.connect(self._on_tab_changed)
-        self.setCentralWidget(tabs)
+        outer.addWidget(tabs, 1)
+        self.setCentralWidget(wrapper)
 
     def _on_tab_changed(self, _index: int) -> None:
         self.books_tab.refresh()
@@ -619,6 +855,7 @@ def run_app(db_path: Path) -> int:
 
     app = QtWidgets.QApplication([])
     app.setApplicationName("Library Management")
+    apply_theme(app)
 
     win = MainWindow(db)
     win.show()
