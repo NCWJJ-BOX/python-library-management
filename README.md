@@ -1,38 +1,68 @@
-# Python Library Management (PyQt + SQLite)
+# Library Management (PyQt + SQLite)
 
-Simple library management app with a PyQt UI and a SQLite database.
+Desktop library management app with a modern PyQt6 UI and a SQLite database.
+
+## Screenshots
+
+![Books tab](img/books.png)
+
+![Users tab](img/users.png)
+
+![Loans tab](img/loans.png)
+
+![Tools tab](img/tools.png)
 
 ## Features
 
-- Books: add/edit/delete, search, status (available/checked out)
+- Books: add/edit/delete, search, status (available / checked out)
 - Users: add/edit/delete, search
 - Loans: checkout/return, due date, filter open/all and by user
 - Tools: export/import CSV (books/users), backup/restore database
 
-## Run
+## Quick Start
 
-1) Install dependencies
+Prerequisites:
 
-```bash
+- Python 3.10+ (tested with 3.12)
+
+Create a virtual environment and install dependencies.
+
+Windows (PowerShell):
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -U pip
 pip install -r requirements.txt
 ```
 
-If you are on Debian/Ubuntu with PEP 668 restrictions, use a virtualenv:
+macOS / Linux:
 
 ```bash
-apt install python3-venv
 python -m venv .venv
 . .venv/bin/activate
+python -m pip install -U pip
 pip install -r requirements.txt
 ```
 
-2) Start the app
+Start the app:
 
 ```bash
 python "library management.py"
 ```
 
-The default database file is created at `./library.db`.
+Default database file is created at `./library.db`.
+
+Optional: choose a database path:
+
+```bash
+python "library management.py" --db ./data/library.db
+```
+
+## CSV Import/Export
+
+- Books CSV columns: `title,author,isbn`
+- Users CSV columns: `name`
 
 ## Development
 
@@ -50,13 +80,9 @@ python -m compileall -q .
 
 ## Git: commit + push
 
-Typical workflow:
-
 ```bash
 git status
 git add <files>
 git commit -m "<message>"
 git push
 ```
-
-This repo currently uses simple, plain commit messages (no `feat:` prefixes).
