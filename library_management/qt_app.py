@@ -758,6 +758,52 @@ class ToolsTab(QtWidgets.QWidget):
         layout.addWidget(self.btn_restore)
         layout.addStretch(1)
 
+    def _refresh_info(self) -> None:
+        self.info.setText(f"Database: {self.db.db_path}")
+
+    def backup(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Backup Database",
+            "library.backup.db",
+            "DB (*.db)",
+        )
+        if not path:
+            return
+        try:
+            self.db.backup_to(Path(path))
+        except LibraryError as e:
+            QtWidgets.QMessageBox.warning(self, "Error", str(e))
+            return
+        QtWidgets.QMessageBox.information(self, "Backup", "Backup created")
+
+    def restore(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Restore Database",
+            "",
+            "DB (*.db)",
+        )
+        if not path:
+            return
+        if (
+            QtWidgets.QMessageBox.question(
+                self,
+                "Restore",
+                "Restore will overwrite current database. Continue?",
+            )
+            != QtWidgets.QMessageBox.StandardButton.Yes
+        ):
+            return
+        try:
+            self.db.restore_from(Path(path))
+            self.db.migrate()
+        except LibraryError as e:
+            QtWidgets.QMessageBox.warning(self, "Error", str(e))
+            return
+        self._refresh_info()
+        QtWidgets.QMessageBox.information(self, "Restore", "Database restored")
+
 
 class HeaderBar(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -778,38 +824,6 @@ class HeaderBar(QtWidgets.QWidget):
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 12)
         layout.addLayout(text_col, 1)
-
-    def _refresh_info(self) -> None:
-        self.info.setText(f"Database: {self.db.db_path}")
-
-    def backup(self) -> None:
-        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Backup Database", "library.backup.db", "DB (*.db)")
-        if not path:
-            return
-        try:
-            self.db.backup_to(Path(path))
-        except LibraryError as e:
-            QtWidgets.QMessageBox.warning(self, "Error", str(e))
-            return
-        QtWidgets.QMessageBox.information(self, "Backup", "Backup created")
-
-    def restore(self) -> None:
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Restore Database", "", "DB (*.db)")
-        if not path:
-            return
-        if (
-            QtWidgets.QMessageBox.question(self, "Restore", "Restore will overwrite current database. Continue?")
-            != QtWidgets.QMessageBox.StandardButton.Yes
-        ):
-            return
-        try:
-            self.db.restore_from(Path(path))
-            self.db.migrate()
-        except LibraryError as e:
-            QtWidgets.QMessageBox.warning(self, "Error", str(e))
-            return
-        self._refresh_info()
-        QtWidgets.QMessageBox.information(self, "Restore", "Database restored")
 
 
 class MainWindow(QtWidgets.QMainWindow):
