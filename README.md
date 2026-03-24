@@ -84,5 +84,4 @@ python -m compileall -q .
 git status
 git add <files>
 git commit -m "<message>"
-git push
-```
+
