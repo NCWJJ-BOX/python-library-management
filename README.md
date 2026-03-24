@@ -64,18 +64,3 @@ python "library management.py" --db ./data/library.db
 - Books CSV columns: `title,author,isbn`
 - Users CSV columns: `name`
 
-## Development
-
-Typecheck:
-
-```bash
-basedpyright .
-```
-
-Syntax check:
-
-```bash
-python -m compileall -q .
-```
-
-
